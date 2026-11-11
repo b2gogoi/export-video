@@ -1,0 +1,6 @@
+https://hefbf5knt7.execute-api.ap-south-1.amazonaws.com/Prod/hello
+
+
+curl -i -X POST 'https://hefbf5knt7.execute-api.ap-south-1.amazonaws.com/Prod/hello' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bhaskar"}'
