@@ -4,9 +4,12 @@ import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 const s3 = new S3Client({});
 const corsHeaders = {
     'Access-Control-Allow-Origin': 'http://localhost:5173',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type,X-Client-Id,X-Request-Id,X-Client-Sent-At,X-Client-Language,X-Client-Timezone',
     'Access-Control-Allow-Methods': 'OPTIONS,POST',
 };
+
+const getHeader = (headers: APIGatewayProxyEvent['headers'], name: string) =>
+    Object.entries(headers).find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1];
 
 /**
  *
@@ -25,6 +28,18 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         const requestBody = event.body ? JSON.parse(event.body) : {};
 
         const key = `requests/${Date.now()}-${event.requestContext.requestId}.json`;
+        const metadata = {
+            clientId: getHeader(event.headers, 'X-Client-Id'),
+            requestId: getHeader(event.headers, 'X-Request-Id'),
+            sentAt: getHeader(event.headers, 'X-Client-Sent-At'),
+            receivedAt: new Date().toISOString(),
+            serverRequestId: event.requestContext.requestId,
+            client: {
+                userAgent: getHeader(event.headers, 'User-Agent'),
+                language: getHeader(event.headers, 'X-Client-Language') ?? getHeader(event.headers, 'Accept-Language'),
+                timezone: getHeader(event.headers, 'X-Client-Timezone'),
+            },
+        };
 
         console.log('Received body[key]==', key);
 
@@ -32,7 +47,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             new PutObjectCommand({
                 Bucket: process.env.REQUEST_BUCKET,
                 Key: key,
-                Body: JSON.stringify(requestBody, null, 2),
+                Body: JSON.stringify({ request: requestBody, metadata }, null, 2),
                 ContentType: 'application/json',
             }),
         );

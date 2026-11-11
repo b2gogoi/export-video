@@ -16,7 +16,7 @@ Globals:
   Api:
     Cors:
       AllowMethods: "'POST,OPTIONS'"
-      AllowHeaders: "'Content-Type'"
+      AllowHeaders: "'Content-Type,X-Client-Id,X-Request-Id,X-Client-Sent-At,X-Client-Language,X-Client-Timezone'"
       AllowOrigin: "'http://localhost:5173'"
 Resources:
   HelloWorldFunction:

@@ -61,22 +61,19 @@ function App() {
     try {
       if (!apiUrl) throw new Error('API URL is missing. Set VITE_API_URL in frontend/.env.local.')
 
-      const request = {
-        name: cleanName,
-        clientId: browserIdentity.clientId,
-        requestId: crypto.randomUUID(),
-        sentAt: new Date().toISOString(),
-        client: {
-          userAgent: browserIdentity.userAgent,
-          language: browserIdentity.language,
-          timezone: browserIdentity.timezone,
-        },
-      }
+      const requestId = crypto.randomUUID()
 
       const result = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Client-Id': browserIdentity.clientId,
+          'X-Request-Id': requestId,
+          'X-Client-Sent-At': new Date().toISOString(),
+          'X-Client-Language': browserIdentity.language,
+          'X-Client-Timezone': browserIdentity.timezone,
+        },
+        body: JSON.stringify({ name: cleanName }),
       })
 
       const payload = (await result.json().catch(() => ({}))) as ApiResponse
