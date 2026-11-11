@@ -18,6 +18,8 @@ The JSON request body stays `{ "name": "..." }`. Identity and context travel in 
 
 The API must allow the local frontend origin (`http://localhost:5173`) through CORS. See the root `template.yaml` and deploy the SAM changes if the deployed API has not been updated for CORS yet.
 
+The backend also exposes `GET /requests?type=greeting` for reading stored request records by type. Query pages are limited to 100 items; pass the returned `nextToken` query parameter to fetch the next page.
+
 ## Production build
 
 ```bash

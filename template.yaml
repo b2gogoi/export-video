@@ -8,14 +8,14 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 10
 
     # You can add LoggingConfig parameters such as the Logformat, Log Group, and SystemLogLevel or ApplicationLogLevel. Learn more here https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-loggingconfig.
     LoggingConfig:
       LogFormat: JSON
   Api:
     Cors:
-      AllowMethods: "'POST,OPTIONS'"
+      AllowMethods: "'GET,POST,OPTIONS'"
       AllowHeaders: "'Content-Type,X-Client-Id,X-Request-Id,X-Client-Sent-At,X-Client-Language,X-Client-Timezone'"
       AllowOrigin: "'http://localhost:5173'"
 Resources:
@@ -30,15 +30,29 @@ Resources:
       Policies: 
         - S3WritePolicy:
             BucketName: !Ref RequestBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:Query
+              Resource:
+                - !GetAtt RequestsTable.Arn
+                - !Sub "${RequestsTable.Arn}/index/*"
       Environment:
         Variables:
           REQUEST_BUCKET: !Ref RequestBucket
+          REQUESTS_TABLE: !Ref RequestsTable
       Events:
         HelloWorld:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /hello
             Method: post
+        GetRequests:
+          Type: Api
+          Properties:
+            Path: /requests
+            Method: get
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -49,6 +63,51 @@ Resources:
         - app.ts
   RequestBucket:
     Type: AWS::S3::Bucket
+  RequestsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: request
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: clientId
+          AttributeType: S
+        - AttributeName: requestId
+          AttributeType: S
+        - AttributeName: type
+          AttributeType: S
+        - AttributeName: timezone
+          AttributeType: S
+      KeySchema:
+        - AttributeName: clientId
+          KeyType: HASH
+        - AttributeName: requestId
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: ClientRequestsByType
+          KeySchema:
+            - AttributeName: clientId
+              KeyType: HASH
+            - AttributeName: type
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      GlobalSecondaryIndexes:
+        - IndexName: RequestsByTypeClientId
+          KeySchema:
+            - AttributeName: type
+              KeyType: HASH
+            - AttributeName: clientId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: RequestsByTimezoneClientId
+          KeySchema:
+            - AttributeName: timezone
+              KeyType: HASH
+            - AttributeName: clientId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
@@ -57,6 +116,12 @@ Outputs:
     Description: API Gateway endpoint URL for Prod stage for Hello World 
       function
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/hello/"
+  RequestsApi:
+    Description: API Gateway endpoint URL for requests lookup
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/requests"
+  RequestsTableName:
+    Description: DynamoDB request table name
+    Value: !Ref RequestsTable
   HelloWorldFunction:
     Description: Hello World Lambda Function ARN
     Value: !GetAtt HelloWorldFunction.Arn

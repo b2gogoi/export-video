@@ -10,6 +10,8 @@ This project contains source code and supporting files for a serverless applicat
 
 The application uses several AWS resources, including Lambda functions and an API Gateway API. These resources are defined in the `template.yaml` file in this project. You can update the template to add AWS resources through the same deployment process that updates your application code.
 
+The greeting `POST /hello` stores the JSON request in S3 and records request metadata in the DynamoDB table `request`. The `GET /requests?type=greeting` endpoint queries the `RequestsByTypeClientId` index and returns a page of matching entries with a `nextToken` when more results are available. See the `RequestsTable` resource in `template.yaml` for the table and index key design.
+
 ## Run the local frontend
 
 The React client is in `frontend/`. Follow [frontend/README.md](frontend/README.md) to configure the deployed API URL and start the local Vite development server. The SAM template allows requests from `http://localhost:5173`; deploy the CORS changes before calling the API from the browser.
