@@ -8,6 +8,38 @@ type ApiResponse = {
 }
 
 const apiUrl = import.meta.env.VITE_API_URL?.trim()
+const clientIdStorageKey = 'export-video.client-id'
+const fingerprintLogKey = 'export-video.fingerprint-logged'
+
+function getOrCreateClientId() {
+  try {
+    const existing = localStorage.getItem(clientIdStorageKey)
+    if (existing) return existing
+
+    const id = crypto.randomUUID()
+    localStorage.setItem(clientIdStorageKey, id)
+    return id
+  } catch {
+    // If browser storage is unavailable, keep this visit usable with a session-only ID.
+    return crypto.randomUUID()
+  }
+}
+
+const browserIdentity = {
+  clientId: getOrCreateClientId(),
+  userAgent: navigator.userAgent,
+  language: navigator.language,
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+}
+
+try {
+  if (!sessionStorage.getItem(fingerprintLogKey)) {
+    console.info('[export-video] browser identity (pseudonymous):', browserIdentity)
+    sessionStorage.setItem(fingerprintLogKey, 'true')
+  }
+} catch {
+  console.info('[export-video] browser identity (pseudonymous):', browserIdentity)
+}
 
 function App() {
   const [name, setName] = useState('')
@@ -29,10 +61,22 @@ function App() {
     try {
       if (!apiUrl) throw new Error('API URL is missing. Set VITE_API_URL in frontend/.env.local.')
 
+      const request = {
+        name: cleanName,
+        clientId: browserIdentity.clientId,
+        requestId: crypto.randomUUID(),
+        sentAt: new Date().toISOString(),
+        client: {
+          userAgent: browserIdentity.userAgent,
+          language: browserIdentity.language,
+          timezone: browserIdentity.timezone,
+        },
+      }
+
       const result = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: cleanName }),
+        body: JSON.stringify(request),
       })
 
       const payload = (await result.json().catch(() => ({}))) as ApiResponse
@@ -178,6 +222,9 @@ function App() {
                   <ArrowRight size={12} className="ml-auto shrink-0 text-violet-400" />
                   <code className="font-mono">{loading ? '…' : outputMessage ? '200' : 'Lambda'}</code>
                 </div>
+                <p className="mt-3 text-[10px] leading-4 text-slate-400">
+                  Repeat visits use a random ID saved in this browser. Browser details are sent with each request; clearing site data resets the ID.
+                </p>
               </div>
             </div>
             <p className="mt-4 text-center text-[11px] text-slate-400">A local frontend connected to your deployed API Gateway endpoint.</p>
