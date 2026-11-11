@@ -2,6 +2,11 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 const s3 = new S3Client({});
+const corsHeaders = {
+    'Access-Control-Allow-Origin': 'http://localhost:5173',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST',
+};
 
 /**
  *
@@ -33,6 +38,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         );
         return {
             statusCode: 200,
+            headers: corsHeaders,
             body: JSON.stringify({
                 message: `Hello, ${requestBody.name}!`,
             }),
@@ -41,6 +47,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         console.log(err);
         return {
             statusCode: 500,
+            headers: corsHeaders,
             body: JSON.stringify({
                 message: 'some error happened',
             }),

@@ -5,9 +5,14 @@ This project contains source code and supporting files for a serverless applicat
 - hello-world - Code for the application's Lambda function written in TypeScript.
 - events - Invocation events that you can use to invoke the function.
 - hello-world/tests - Unit tests for the application code. 
+- frontend - Local React and Tailwind client for the greeting API.
 - template.yaml - A template that defines the application's AWS resources.
 
 The application uses several AWS resources, including Lambda functions and an API Gateway API. These resources are defined in the `template.yaml` file in this project. You can update the template to add AWS resources through the same deployment process that updates your application code.
+
+## Run the local frontend
+
+The React client is in `frontend/`. Follow [frontend/README.md](frontend/README.md) to configure the deployed API URL and start the local Vite development server. The SAM template allows requests from `http://localhost:5173`; deploy the CORS changes before calling the API from the browser.
 
 If you prefer to use an integrated development environment (IDE) to build and test your application, you can use the AWS Toolkit.  
 The AWS Toolkit is an open source plug-in for popular IDEs that uses the SAM CLI to build and deploy serverless applications on AWS. The AWS Toolkit also adds a simplified step-through debugging experience for Lambda function code. See the following links to get started.
