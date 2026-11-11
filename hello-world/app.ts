@@ -42,6 +42,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         };
 
         console.log('Received body[key]==', key);
+        console.log('From client: ', metadata.clientId);
 
         await s3.send(
             new PutObjectCommand({
